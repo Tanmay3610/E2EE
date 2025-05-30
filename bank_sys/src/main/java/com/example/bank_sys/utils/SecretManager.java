@@ -12,7 +12,7 @@ import java.util.Scanner;
 public class SecretManager implements VaultInteractionUtility {
     @Override
     public String getKeyName(CryptoConfigDto config, String keyType, String keyVersion) {
-        return keyType + "_" + config.getClientId() + "_" + config.getPartnerId() + "_" + keyVersion + ".txt";
+        return "vault/" + keyType + "_" + config.getClientId() + "_" + config.getPartnerId() + "_" + keyVersion + ".txt";
     }
 
     @Override

@@ -23,9 +23,11 @@ public class PartnerController {
             @Valid
             @RequestHeader(Constants.PARTNER_ID_HEADER_KEY) String partnerId,
             @Valid
-            @RequestHeader(Constants.CLIENT_ID_HEADER_KEY) String clientId
+            @RequestHeader(Constants.CLIENT_ID_HEADER_KEY) String clientId,
+            @Valid
+            @RequestHeader(Constants.CLIENT_KEY_VERSION) String keyVersion
     ) throws Exception {
-        String res = partnerService.encryptPayload(partnerId, clientId);
+        String res = partnerService.encryptPayload(partnerId, clientId, keyVersion);
         return ResponseEntity.ok(res);
     }
 

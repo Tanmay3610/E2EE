@@ -1,6 +1,5 @@
 package com.example.bank_sys.services;
 
-import com.example.bank_sys.dto.EncryptDataRequestDto;
 import com.example.esee_poc.dto.CryptoConfigDto;
 import com.example.esee_poc.entity.CryptoConfig;
 import com.example.esee_poc.enums.AlgorithmTypes;
@@ -98,5 +97,23 @@ public class CryptoService {
         cryptoConfigRepo.save(newConfig);
 
         return "Successfully rotated keys for clientId: " + clientId + " and partnerId: " + partnerId;
+    }
+
+    public String deleteKey(String clientId, String partnerId, String keyVersion) throws Exception {
+        Optional<CryptoConfig> configRes = cryptoConfigRepo.findFirstByPartnerIdAndClientIdAndIsDeletedFalseOrderByCreatedAtDesc(partnerId, clientId);
+        if (configRes.isEmpty()) {
+            return "Configuration not found for partnerId: " + partnerId + " and clientId: " + clientId;
+        }
+
+        CryptoConfig config = configRes.get();
+        Algorithm<?> algorithm = algorithmSelector.getAlgorithm(config.getClientAlgorithm().getAlgorithm());
+
+        if (algorithm == null) {
+            throw new IllegalArgumentException("Invalid algorithm specified in the request");
+        }
+
+        cryptoConfigRepo.deleteByClientIdAndPartnerIdAndCurrentKeyVersionAndIsDeletedFalse(clientId, partnerId, keyVersion);
+        algorithm.removeKeys(Converter.toCryptoConfigDto(config), keyVersion);
+        return "Successfully deleted key for clientId: " + clientId + " and partnerId: " + partnerId;
     }
 }

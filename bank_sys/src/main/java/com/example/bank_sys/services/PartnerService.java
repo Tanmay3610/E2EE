@@ -6,7 +6,6 @@ import com.example.bank_sys.dto.EncryptedKeysDto;
 import com.example.esee_poc.dto.CryptoConfigDto;
 import com.example.esee_poc.entity.CryptoConfig;
 import com.example.esee_poc.interfaces.Algorithm;
-import com.example.esee_poc.interfaces.VaultInteractionUtility;
 import com.example.esee_poc.repo.CryptoConfigRepo;
 import com.example.esee_poc.utils.AlgorithmSelector;
 import com.example.esee_poc.utils.Converter;
@@ -78,7 +77,7 @@ public class PartnerService {
         return "Session started successfully";
     }
 
-    public String encryptPayload(String partnerId, String clientId) throws Exception {
+    public String encryptPayload(String partnerId, String clientId, String keyVersion) throws Exception {
         Optional<CryptoConfig> optionalConfig = cryptoConfigRepo.findFirstByPartnerIdAndClientIdAndIsDeletedFalseOrderByCreatedAtDesc(partnerId, clientId);
         if (optionalConfig.isEmpty()) {
             return "Crypto configuration not found for partnerId: " + partnerId + " and clientId: " + clientId;
@@ -87,7 +86,7 @@ public class PartnerService {
         CryptoConfig config = optionalConfig.get();
         Algorithm<?> algorithm = algorithmSelector.getAlgorithm(config.getPartnerAlgorithm().getAlgorithm());
 
-        List<String> keysObj = algorithm.fetchKey(Converter.toCryptoConfigDto(config), config.getCurrentKeyVersion());
+        List<String> keysObj = algorithm.fetchKey(Converter.toCryptoConfigDto(config), keyVersion);
 
         ObjectMapper objectMapper = new ObjectMapper();
         AddBalanceRequestDto balance = AddBalanceRequestDto.builder().accountId("123").amount("123").build();
