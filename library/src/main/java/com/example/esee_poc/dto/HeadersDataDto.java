@@ -17,9 +17,6 @@ public class HeadersDataDto {
     @NotNull(message = "Partner ID cannot be null")
     String partnerId;
 
-    @NotNull(message = "Encrypted Payload cannot be null")
-    String encryptedPayload;
-
     @NotNull(message = "Client Key Version cannot be null")
     String clientKeyVersion;
 
@@ -31,7 +28,6 @@ public class HeadersDataDto {
         return "HeadersDataDto{" +
                 "clientId='" + clientId + '\'' +
                 ", partnerId='" + partnerId + '\'' +
-                ", encryptedPayload='" + encryptedPayload + '\'' +
                 ", clientKeyVersion='" + clientKeyVersion + '\'' +
                 ", encryptedKeys=" + encryptedKeys +
                 '}';

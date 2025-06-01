@@ -19,8 +19,6 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.http.ResponseEntity;
 
-import java.security.GeneralSecurityException;
-import java.util.ArrayList;
 import java.util.List;
 
 @Aspect
@@ -36,7 +34,6 @@ public class Interceptor {
         String clientId = request.getHeader(Constants.CLIENT_ID_HEADER_KEY);
         String partnerId = request.getHeader(Constants.PARTNER_ID_HEADER_KEY);
         String encryptionKey = request.getHeader(Constants.ENCRYPTION_KEY_HEADER_KEYS);
-        String encryptedData = request.getHeader(Constants.ENCRYPTED_DATA_HEADER_KEY);
         String clientKeyVersion = request.getHeader(Constants.CLIENT_KEY_VERSION);
 
         List<String> encryptionKeys = List.of(encryptionKey.split("::"));
@@ -45,7 +42,6 @@ public class Interceptor {
                 .clientId(clientId)
                 .partnerId(partnerId)
                 .encryptedKeys(encryptionKeys)
-                .encryptedPayload(encryptedData)
                 .clientKeyVersion(clientKeyVersion)
                 .build();
     }
@@ -71,31 +67,6 @@ public class Interceptor {
         return partnerAlgorithm.encrypt(payloadString, partnerKeys);
     }
 
-    private String decryptPayload(CryptoConfigDto cryptoConfigData, HeadersDataDto headersData) throws Exception {
-        Algorithm<?> partnerAlgorithm = algorithmSelector.getAlgorithm(cryptoConfigData.getPartnerAlgorithm().getAlgorithm());
-        Algorithm<?> clientAlgorithm = algorithmSelector.getAlgorithm(cryptoConfigData.getClientAlgorithm().getAlgorithm());
-
-        if (partnerAlgorithm == null || clientAlgorithm == null) {
-            throw new IllegalArgumentException("Invalid algorithm configuration for partner or client.");
-        }
-
-        List<String> clientSecretKeys = clientAlgorithm.fetchKey(cryptoConfigData, headersData.getClientKeyVersion());
-
-        // Decrypt the key using Client Algorithm
-        List<String> decryptedKeys = headersData.getEncryptedKeys()
-                                        .stream()
-                                        .map((encryptedKey) -> {
-                                            try {
-                                                return (String) clientAlgorithm.decrypt(encryptedKey, clientSecretKeys);
-                                            } catch (GeneralSecurityException e) {
-                                                throw new RuntimeException(e);
-                                            }
-                                        }).toList();
-
-        // Decrypt the payload using Partner Algorithm
-        return partnerAlgorithm.decrypt(headersData.getEncryptedPayload(), decryptedKeys);
-    }
-
     @Around("within(@org.springframework.web.bind.annotation.RestController *)")
     public Object decryptRequest(ProceedingJoinPoint joinPoint) throws Throwable {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
@@ -107,16 +78,9 @@ public class Interceptor {
         System.out.println(headersData.toString());
 
         CryptoConfigDto cryptoConfigData = fetchCryptoConfig(headersData);
-        System.out.println(cryptoConfigData);
-        String decryptedPayload = decryptPayload(cryptoConfigData, headersData);
-
-        ArrayList<Object> argsArray = new ArrayList<>(List.of(joinPoint.getArgs()));
 
         ObjectMapper objectMapper = new ObjectMapper();
-        Object decrypted = objectMapper.readValue(decryptedPayload, argsArray.getFirst().getClass());
-        argsArray.set(0, decrypted);
-
-        Object responsePayload = joinPoint.proceed(argsArray.toArray());
+        Object responsePayload = joinPoint.proceed();
         if (responsePayload instanceof ResponseEntity<?> responseEntity) {
             Object responseBody = responseEntity.getBody();
 

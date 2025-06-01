@@ -17,6 +17,7 @@ public class BankController {
 
     @PostMapping("/balance")
     public ResponseEntity<AddBalanceRequestDto> getBalance(@RequestBody AddBalanceRequestDto addBalanceRequest) {
+        System.out.println(addBalanceRequest);
         return ResponseEntity.ok(bankService.addBalance(addBalanceRequest));
     }
 }
